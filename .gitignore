@@ -1,0 +1,50 @@
+# Virtual Environment
+venv/
+env/
+.venv/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Model weights & large files
+*.pt
+*.pth
+*.onnx
+*.weights
+runs/
+
+# Data / datasets (usually too large for git)
+data/
+datasets/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Environment variables
+.env
+*.env
+
+# Temporary files
+tmp/
+temp/

@@ -1,0 +1,30 @@
+# Core deep learning
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.4.0
+
+# Depth estimation (Path 2 - Auditor Branch)
+transformers>=4.30.0
+huggingface_hub>=0.20.0
+
+# Explainability (LayerCAM / Grad-CAM)
+grad-cam>=1.5.0
+
+# SAHI - Sliced Inference for high-res images
+sahi>=0.11.0
+
+# Kalman Filter for TSCM deduplication
+filterpy>=1.4.5
+
+# Geospatial output
+geojson>=3.0.0
+shapely>=2.0.0
+
+# Utilities
+opencv-python>=4.8.0
+numpy>=1.24.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+PyYAML>=6.0
+onnx>=1.14.0
+onnxruntime>=1.15.0

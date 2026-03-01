@@ -1,0 +1,17 @@
+# RDD2022 Dataset Configuration for DPR-RIA
+# Dataset path: /Users/vjkiran/Documents/RoadDamageDetection/datasets
+# Format: YOLO TXT (already converted, no need to run convert_rdd2022.py)
+
+path: /Users/vjkiran/Documents/RoadDamageDetection/datasets
+
+train: train/images   # 37,230 images
+val:   valid/images   # 3,286  images
+test:  test/images    # 3,285  images
+
+# RDD2022 class names (4 classes)
+nc: 4
+names:
+  0: D00_Longitudinal_Crack
+  1: D10_Transverse_Crack
+  2: D20_Alligator_Crack
+  3: D40_Pothole
