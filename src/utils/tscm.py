@@ -44,6 +44,7 @@ class AssetTrack:
         self.class_name = det.get("class_name", "D40_Pothole")
         self.hits = 1
         self.frames_tracked = 1
+        self.last_distance = det.get("distance", 0.0)
 
         # Kalman filter state: [lat, lon, area, depth]
         self.kf = KalmanFilter(dim_x=4, dim_z=4)
@@ -88,6 +89,7 @@ class AssetTrack:
         self._total_weight += w
         self.hits += 1
         self.frames_tracked += 1
+        self.last_distance = det.get("distance", self.last_distance)
 
     @property
     def state(self) -> np.ndarray:
@@ -107,6 +109,7 @@ class AssetTrack:
             "maintenance_action": action,
             "frames_tracked": self.frames_tracked,
             "total_detections": self.hits,
+            "last_distance": getattr(self, "last_distance", 0.0)
         }
 
 
@@ -129,6 +132,7 @@ class CDKFTracker:
         max_frames_unmatched: int = 40,
     ) -> None:
         self.assets: list[AssetTrack] = []
+        self.archived_assets: list[AssetTrack] = []  # save long-term assets that exit the view
         self.next_id = 0
         self.match_threshold_meters = match_threshold_meters
         self.max_frames_unmatched = max_frames_unmatched
@@ -170,19 +174,26 @@ class CDKFTracker:
                 self.next_id += 1
 
         # Increment unmatched counters and prune stale tracks
+        active_assets = []
         for track in self.assets:
             if track.asset_id not in matched_ids:
                 self._unmatched_counters[track.asset_id] = (
                     self._unmatched_counters.get(track.asset_id, 0) + 1
                 )
-        self.assets = [
-            t for t in self.assets
-            if self._unmatched_counters.get(t.asset_id, 0) <= self.max_frames_unmatched
-        ]
+            
+            # If the track hasn't been seen in max_frames, archive it if it's valid
+            if self._unmatched_counters.get(track.asset_id, 0) > self.max_frames_unmatched:
+                if track.hits >= 1:  # Keep all detections in the archive
+                    self.archived_assets.append(track)
+            else:
+                active_assets.append(track)
+                
+        self.assets = active_assets
 
     def get_inventory(self) -> list[dict]:
         """Returns the final deduplicated list of unique road-defect assets."""
-        return [t.to_dict() for t in self.assets]
+        all_assets = self.assets + self.archived_assets
+        return [t.to_dict() for t in all_assets]
 
 
 # ─── Smoke test ───────────────────────────────────────────────────────────────

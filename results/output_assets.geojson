@@ -1,0 +1,474 @@
+{
+  "type": "FeatureCollection",
+  "name": "RoadDamageInventory_IRC82-2015",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.37591737675032,
+          37.77680377837172
+        ]
+      },
+      "properties": {
+        "id": 1043,
+        "class": "D40_Pothole",
+        "severity_irc82": "High",
+        "maintenance_action": "Emergency Repair",
+        "area_cm2": 134.3823,
+        "depth_mm": 53.75,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667422Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.28368548746961,
+          37.77681700321105
+        ]
+      },
+      "properties": {
+        "id": 1044,
+        "class": "D40_Pothole",
+        "severity_irc82": "Medium",
+        "maintenance_action": "Patching / Sealing",
+        "area_cm2": 65.7152,
+        "depth_mm": 26.29,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667429Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.37799515012445,
+          37.77680511594015
+        ]
+      },
+      "properties": {
+        "id": 1045,
+        "class": "D40_Pothole",
+        "severity_irc82": "High",
+        "maintenance_action": "Emergency Repair",
+        "area_cm2": 145.824,
+        "depth_mm": 58.33,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667431Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.28807373915993,
+          37.7768177489862
+        ]
+      },
+      "properties": {
+        "id": 1046,
+        "class": "D40_Pothole",
+        "severity_irc82": "Medium",
+        "maintenance_action": "Patching / Sealing",
+        "area_cm2": 73.359,
+        "depth_mm": 29.34,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667433Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.3880041839051,
+          37.776795694496144
+        ]
+      },
+      "properties": {
+        "id": 1047,
+        "class": "D40_Pothole",
+        "severity_irc82": "High",
+        "maintenance_action": "Emergency Repair",
+        "area_cm2": 208.7102,
+        "depth_mm": 80.0,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667436Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.30063653485071,
+          37.776810306862366
+        ]
+      },
+      "properties": {
+        "id": 1048,
+        "class": "D40_Pothole",
+        "severity_irc82": "Medium",
+        "maintenance_action": "Patching / Sealing",
+        "area_cm2": 72.4311,
+        "depth_mm": 28.97,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667438Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.39127334038398,
+          37.776791203121995
+        ]
+      },
+      "properties": {
+        "id": 1049,
+        "class": "D40_Pothole",
+        "severity_irc82": "High",
+        "maintenance_action": "Emergency Repair",
+        "area_cm2": 166.9699,
+        "depth_mm": 66.79,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667440Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.30691089628019,
+          37.77680951420953
+        ]
+      },
+      "properties": {
+        "id": 1050,
+        "class": "D40_Pothole",
+        "severity_irc82": "Low",
+        "maintenance_action": "Routine Monitoring",
+        "area_cm2": 61.1573,
+        "depth_mm": 24.46,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667442Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.38865240692189,
+          37.77679602172612
+        ]
+      },
+      "properties": {
+        "id": 1051,
+        "class": "D40_Pothole",
+        "severity_irc82": "Medium",
+        "maintenance_action": "Patching / Sealing",
+        "area_cm2": 86.9857,
+        "depth_mm": 34.79,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667444Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.31402172587616,
+          37.776808298080276
+        ]
+      },
+      "properties": {
+        "id": 1052,
+        "class": "D40_Pothole",
+        "severity_irc82": "Medium",
+        "maintenance_action": "Patching / Sealing",
+        "area_cm2": 69.9813,
+        "depth_mm": 27.99,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667446Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.39996995884935,
+          37.776783840237705
+        ]
+      },
+      "properties": {
+        "id": 1053,
+        "class": "D40_Pothole",
+        "severity_irc82": "High",
+        "maintenance_action": "Emergency Repair",
+        "area_cm2": 149.6093,
+        "depth_mm": 59.84,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667448Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.32272072889566,
+          37.77680598784964
+        ]
+      },
+      "properties": {
+        "id": 1054,
+        "class": "D40_Pothole",
+        "severity_irc82": "Low",
+        "maintenance_action": "Routine Monitoring",
+        "area_cm2": 57.7463,
+        "depth_mm": 23.1,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667450Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.40471943476506,
+          37.77677793063253
+        ]
+      },
+      "properties": {
+        "id": 1055,
+        "class": "D40_Pothole",
+        "severity_irc82": "Medium",
+        "maintenance_action": "Patching / Sealing",
+        "area_cm2": 109.0842,
+        "depth_mm": 43.63,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667451Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.34076785695422,
+          37.77679602534425
+        ]
+      },
+      "properties": {
+        "id": 1056,
+        "class": "D40_Pothole",
+        "severity_irc82": "Medium",
+        "maintenance_action": "Patching / Sealing",
+        "area_cm2": 63.0435,
+        "depth_mm": 25.22,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667453Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.34965061321482,
+          37.77679393583005
+        ]
+      },
+      "properties": {
+        "id": 1057,
+        "class": "D40_Pothole",
+        "severity_irc82": "Low",
+        "maintenance_action": "Routine Monitoring",
+        "area_cm2": 53.176,
+        "depth_mm": 21.27,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667455Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.36188392508308,
+          37.77678997040891
+        ]
+      },
+      "properties": {
+        "id": 1058,
+        "class": "D40_Pothole",
+        "severity_irc82": "Low",
+        "maintenance_action": "Routine Monitoring",
+        "area_cm2": 52.3754,
+        "depth_mm": 20.95,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667457Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.38040574562945,
+          37.7767810637237
+        ]
+      },
+      "properties": {
+        "id": 1059,
+        "class": "D40_Pothole",
+        "severity_irc82": "Low",
+        "maintenance_action": "Routine Monitoring",
+        "area_cm2": 33.705,
+        "depth_mm": 13.48,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667459Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.28354668197214,
+          37.776890646491275
+        ]
+      },
+      "properties": {
+        "id": 1060,
+        "class": "D40_Pothole",
+        "severity_irc82": "Medium",
+        "maintenance_action": "Patching / Sealing",
+        "area_cm2": 118.5604,
+        "depth_mm": 47.42,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667460Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.30791046588952,
+          37.77688410661126
+        ]
+      },
+      "properties": {
+        "id": 1061,
+        "class": "D40_Pothole",
+        "severity_irc82": "High",
+        "maintenance_action": "Emergency Repair",
+        "area_cm2": 128.478,
+        "depth_mm": 51.39,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667462Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.32947349813942,
+          37.77687596716488
+        ]
+      },
+      "properties": {
+        "id": 1062,
+        "class": "D40_Pothole",
+        "severity_irc82": "Medium",
+        "maintenance_action": "Patching / Sealing",
+        "area_cm2": 83.8949,
+        "depth_mm": 33.56,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667464Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.24210550485289,
+          37.77696151987979
+        ]
+      },
+      "properties": {
+        "id": 1063,
+        "class": "D40_Pothole",
+        "severity_irc82": "High",
+        "maintenance_action": "Emergency Repair",
+        "area_cm2": 125.9341,
+        "depth_mm": 50.37,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667466Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.24433845022749,
+          37.77696148682686
+        ]
+      },
+      "properties": {
+        "id": 1064,
+        "class": "D40_Pothole",
+        "severity_irc82": "High",
+        "maintenance_action": "Emergency Repair",
+        "area_cm2": 177.9556,
+        "depth_mm": 71.18,
+        "frames_tracked": 1,
+        "total_detections": 1,
+        "generated_at": "2026-03-04T18:33:43.667467Z"
+      }
+    }
+  ]
+}
