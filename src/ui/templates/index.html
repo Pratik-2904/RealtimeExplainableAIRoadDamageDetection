@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 tailwind.config = {
   darkMode: "class",
@@ -120,6 +121,13 @@ tailwind.config = {
       <span class="material-symbols-outlined text-lg">videocam</span>
       Use Live Camera
     </button>
+    
+    <!-- LLM Report Button -->
+    <button id="btn-llm-report" class="w-full mt-2 py-3 rounded bg-primary-fixed/10 text-primary-fixed font-label-mono text-sm flex items-center justify-center gap-2 hover:bg-primary-fixed/20 transition-all border border-primary-fixed/50 shadow-[0_0_15px_rgba(0,242,255,0.1)]">
+      <span class="material-symbols-outlined text-lg">auto_awesome</span>
+      Auditor AI Report
+    </button>
+    
     <p id="upload-status" class="text-[11px] font-label-mono text-on-surface-variant text-center hidden"></p>
   </div>
   <!-- Footer -->
@@ -237,7 +245,77 @@ tailwind.config = {
       </table>
     </div>
   </div>
+
+  <!-- ═══════════ Auditor AI Section (Inline) ═══════════ -->
+  <div class="mt-6 glass-tier-1 rounded-lg border border-primary-fixed/30 overflow-hidden shadow-[0_0_30px_rgba(0,242,255,0.05)]">
+    <!-- Section Header -->
+    <div class="px-6 py-4 border-b border-white/10 bg-gradient-to-r from-primary-fixed/10 to-transparent flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary-fixed text-2xl">auto_awesome</span>
+        <div>
+          <h3 class="font-headline-md text-[18px] text-primary-fixed">Auditor AI — Explainability Engine</h3>
+          <p class="font-label-mono text-[10px] text-on-surface-variant tracking-wider">POWERED BY GEMINI 2.5 FLASH</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btn-set-key" class="px-3 py-1.5 rounded border border-white/20 font-label-mono text-[11px] text-on-surface-variant hover:text-primary-fixed hover:border-primary-fixed/50 transition-all flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">key</span>
+          <span id="key-status-label">Set API Key</span>
+        </button>
+        <button id="btn-generate-report" class="px-4 py-1.5 rounded bg-primary-fixed text-black font-label-mono text-[11px] font-bold hover:bg-primary-fixed/80 transition-all flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">play_arrow</span>
+          Generate Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Two-panel layout: Report + Chat -->
+    <div class="flex flex-col lg:flex-row min-h-[400px]">
+      <!-- Report Panel -->
+      <div class="lg:w-1/2 border-b lg:border-b-0 lg:border-r border-white/10 flex flex-col">
+        <div class="px-4 py-2 bg-black/20 border-b border-white/10 font-label-mono text-[11px] text-on-surface-variant tracking-wider flex justify-between items-center">
+          <span>📋 END-OF-SHIFT MAINTENANCE REPORT</span>
+          <button id="btn-regen-report" class="text-on-surface-variant hover:text-primary-fixed transition-colors" title="Regenerate report"><span class="material-symbols-outlined text-sm">refresh</span></button>
+        </div>
+        <div id="report-content" class="flex-1 p-5 overflow-y-auto max-h-[500px] text-sm text-on-surface leading-relaxed">
+          <div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-40 py-16">
+            <span class="material-symbols-outlined text-5xl mb-3">description</span>
+            <p class="font-label-mono text-xs">Run the pipeline, then click <strong class="text-primary-fixed">"Generate Report"</strong></p>
+            <p class="font-label-mono text-[10px] mt-1">The AI will analyze detected defects and produce an actionable summary.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Panel -->
+      <div class="lg:w-1/2 flex flex-col">
+        <div class="px-4 py-2 bg-black/20 border-b border-white/10 font-label-mono text-[11px] text-on-surface-variant tracking-wider flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">forum</span> CHAT WITH YOUR DATA
+        </div>
+        <div id="chat-history" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 max-h-[420px] min-h-[200px]">
+          <div class="self-start bg-surface-container-highest/50 border border-white/10 px-3 py-2 rounded-lg rounded-bl-none max-w-[85%]">
+            <p class="text-sm text-on-surface">👋 Hello! I'm the Auditor AI. After you run the pipeline, I can answer questions about detected road defects — severity, locations, repair estimates, and more.</p>
+          </div>
+        </div>
+        <div class="p-3 border-t border-white/10 bg-black/30 flex gap-2">
+          <input type="text" id="chat-input" placeholder="e.g. Which potholes need emergency repair?" class="flex-1 bg-surface-container-lowest border border-white/15 rounded-lg px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary-fixed focus:outline-none transition-colors"/>
+          <button id="btn-send-chat" class="bg-primary-fixed hover:bg-primary-fixed/80 text-black px-3 py-2 rounded-lg transition-colors flex items-center"><span class="material-symbols-outlined text-lg">send</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </main>
+
+  <!-- API Key Modal (only appears when key is needed) -->
+  <div id="api-key-modal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden items-center justify-center">
+    <div class="w-[420px] bg-[#1c1f26] border border-white/15 rounded-xl p-6 flex flex-col gap-4 relative shadow-2xl">
+      <button id="close-api-modal" class="absolute top-4 right-4 text-on-surface-variant hover:text-white"><span class="material-symbols-outlined">close</span></button>
+      <h2 class="text-lg font-bold font-label-mono flex items-center gap-2 text-primary-fixed"><span class="material-symbols-outlined">key</span> Gemini API Key</h2>
+      <p class="text-sm text-on-surface-variant leading-relaxed">Enter your Google Gemini API Key to enable AI report generation and chat. The key is stored only in your browser's local storage — never sent to any third party.</p>
+      <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-black/50 border border-white/20 rounded-lg px-3 py-2.5 text-white font-label-mono focus:border-primary-fixed focus:outline-none transition-colors"/>
+      <button id="save-api-key" class="w-full py-2.5 bg-primary-fixed text-black font-bold font-label-mono rounded-lg hover:bg-primary-fixed/80 transition-colors">Save Key &amp; Continue</button>
+    </div>
+  </div>
 
 <script>
 const socket = io();
@@ -377,6 +455,160 @@ socket.on('frame_update', (data) => {
     tbody.innerHTML = html;
   }
 });
+// ═══════════ AI Report & Chat Logic ═══════════
+const apiKeyModal = document.getElementById('api-key-modal');
+const closeApiModal = document.getElementById('close-api-modal');
+const apiKeyInput = document.getElementById('api-key-input');
+const saveApiKeyBtn = document.getElementById('save-api-key');
+const reportContent = document.getElementById('report-content');
+const btnRegenReport = document.getElementById('btn-regen-report');
+const btnGenerateReport = document.getElementById('btn-generate-report');
+const btnSetKey = document.getElementById('btn-set-key');
+const keyStatusLabel = document.getElementById('key-status-label');
+const chatHistoryEl = document.getElementById('chat-history');
+const chatInputEl = document.getElementById('chat-input');
+const btnSendChat = document.getElementById('btn-send-chat');
+
+let chatMessages = [];
+let pendingAction = null; // 'report' or 'chat'
+
+function getApiKey() {
+  return localStorage.getItem('gemini_api_key');
+}
+
+// Update key status label on load
+(function updateKeyLabel() {
+  if (getApiKey()) {
+    keyStatusLabel.textContent = 'Key Set ✓';
+    btnSetKey.classList.add('border-primary-fixed/50', 'text-primary-fixed');
+  }
+})();
+
+function showApiKeyModal(action) {
+  pendingAction = action;
+  apiKeyModal.classList.remove('hidden');
+  apiKeyModal.classList.add('flex');
+  apiKeyInput.focus();
+}
+
+closeApiModal.addEventListener('click', () => {
+  apiKeyModal.classList.add('hidden');
+  apiKeyModal.classList.remove('flex');
+  pendingAction = null;
+});
+
+saveApiKeyBtn.addEventListener('click', () => {
+  const key = apiKeyInput.value.trim();
+  if (key) {
+    localStorage.setItem('gemini_api_key', key);
+    apiKeyModal.classList.add('hidden');
+    apiKeyModal.classList.remove('flex');
+    keyStatusLabel.textContent = 'Key Set ✓';
+    btnSetKey.classList.add('border-primary-fixed/50', 'text-primary-fixed');
+    // Continue with the pending action
+    if (pendingAction === 'report') generateReport();
+    if (pendingAction === 'chat') sendChat();
+    pendingAction = null;
+  }
+});
+
+btnSetKey.addEventListener('click', () => showApiKeyModal(null));
+
+btnGenerateReport.addEventListener('click', () => {
+  if (!getApiKey()) { showApiKeyModal('report'); return; }
+  generateReport();
+});
+
+btnRegenReport.addEventListener('click', () => {
+  if (!getApiKey()) { showApiKeyModal('report'); return; }
+  generateReport();
+});
+
+async function generateReport() {
+  const apiKey = getApiKey();
+  if (!apiKey) { showApiKeyModal('report'); return; }
+
+  reportContent.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-on-surface-variant py-16">
+    <span class="material-symbols-outlined text-5xl mb-3 animate-spin">sync</span>
+    <p class="font-label-mono text-xs">AI is analyzing the GeoJSON data...</p>
+    <p class="font-label-mono text-[10px] mt-1 text-on-surface-variant/50">This may take 10-30 seconds.</p>
+  </div>`;
+
+  try {
+    const res = await fetch('/generate_report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: apiKey })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      reportContent.innerHTML = marked.parse(data.report);
+    } else {
+      reportContent.innerHTML = `<p class="text-error font-label-mono text-sm p-4">⚠ Error: ${data.error}</p>`;
+      if (data.error && data.error.includes('API')) {
+        localStorage.removeItem('gemini_api_key');
+        keyStatusLabel.textContent = 'Set API Key';
+      }
+    }
+  } catch (e) {
+    reportContent.innerHTML = `<p class="text-error font-label-mono text-sm p-4">⚠ Could not connect to the server.</p>`;
+  }
+}
+
+function appendChatMessage(role, text) {
+  const div = document.createElement('div');
+  if (role === 'user') {
+    div.className = 'self-end bg-primary-fixed/15 border border-primary-fixed/30 px-3 py-2 rounded-lg rounded-br-none max-w-[85%] text-sm text-primary-fixed';
+  } else {
+    div.className = 'self-start bg-surface-container-highest/50 border border-white/10 px-3 py-2 rounded-lg rounded-bl-none max-w-[85%] text-sm text-on-surface';
+  }
+  div.innerHTML = marked.parse(text);
+  chatHistoryEl.appendChild(div);
+  chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+}
+
+async function sendChat() {
+  const text = chatInputEl.value.trim();
+  if (!text) return;
+
+  const apiKey = getApiKey();
+  if (!apiKey) { showApiKeyModal('chat'); return; }
+
+  appendChatMessage('user', text);
+  chatInputEl.value = '';
+
+  const thinkingEl = document.createElement('div');
+  thinkingEl.className = 'self-start bg-surface-container-highest/50 border border-white/10 px-3 py-2 rounded-lg rounded-bl-none max-w-[85%] text-sm text-on-surface-variant animate-pulse';
+  thinkingEl.innerHTML = '⏳ Thinking...';
+  chatHistoryEl.appendChild(thinkingEl);
+  chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: apiKey, message: text, history: chatMessages })
+    });
+    const data = await res.json();
+    chatHistoryEl.removeChild(thinkingEl);
+    if (res.ok) {
+      appendChatMessage('model', data.response);
+      chatMessages.push({ role: 'user', content: text });
+      chatMessages.push({ role: 'model', content: data.response });
+    } else {
+      appendChatMessage('model', `⚠ Error: ${data.error}`);
+    }
+  } catch (e) {
+    chatHistoryEl.removeChild(thinkingEl);
+    appendChatMessage('model', '⚠ Could not connect to the server.');
+  }
+}
+
+btnSendChat.addEventListener('click', sendChat);
+chatInputEl.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') sendChat();
+});
+
 </script>
 </body>
 </html>

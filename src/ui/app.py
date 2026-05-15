@@ -24,6 +24,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit
+from google import genai
+from google.genai import types
 
 from src.models.custom_model import build_dual_path_model
 from src.utils.tscm import CDKFTracker, irc_severity
@@ -160,16 +162,19 @@ def run_pipeline(video_path_or_cam_id):
         pipeline_state["tracker"] = tracker
 
         # 3. Open Video or Camera
+        is_live_camera = isinstance(video_path_or_cam_id, int)
         cap = cv2.VideoCapture(video_path_or_cam_id)
         if not cap.isOpened():
             socketio.emit('pipeline_status', {"status": "error", "message": "Cannot open video source"})
             pipeline_state["running"] = False
             return
 
-        # Request 1080p resolution if it's a live camera
-        if isinstance(video_path_or_cam_id, int):
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        # Camera-specific optimizations to reduce lag
+        if is_live_camera:
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer to get latest frame
+            cap.set(cv2.CAP_PROP_FPS, 30)
 
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -177,7 +182,7 @@ def run_pipeline(video_path_or_cam_id):
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         pipeline_state["total_frames"] = total_frames
 
-        # Output video
+        # Output video (save at native camera resolution for future use)
         out_video_path = os.path.join(RESULTS_DIR, "output.mp4")
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(out_video_path, fourcc, fps, (width, height))
@@ -190,11 +195,18 @@ def run_pipeline(video_path_or_cam_id):
 
         frame_idx = 0
         inference_times = []
+        last_emit_time = 0
+        EMIT_INTERVAL = 1.0 / 15  # Cap streaming at ~15fps to reduce client lag
 
         while cap.isOpened() and pipeline_state["running"]:
             ret, frame = cap.read()
             if not ret:
                 break
+
+            # For live camera: drain buffer to always get latest frame
+            if is_live_camera:
+                for _ in range(2):  # Grab & discard 2 buffered frames
+                    cap.grab()
 
             t_start = time.time()
 
@@ -271,7 +283,8 @@ def run_pipeline(video_path_or_cam_id):
             inference_times.append(latency_ms)
 
             # Encode frame as JPEG for streaming
-            _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+            jpeg_quality = 60 if is_live_camera else 70
+            _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
             frame_b64 = base64.b64encode(buffer).decode('utf-8')
 
             # Build inventory for metrics
@@ -281,47 +294,43 @@ def run_pipeline(video_path_or_cam_id):
             avg_depth = (sum(a["depth_mm"] for a in inventory) / total_detections) if total_detections > 0 else 0
             active_tracks = len(tracker.assets)
 
-            # Build detection rows for the table
-            detection_rows = []
-            for det in frame_detections:
-                best_id = "?"
-                min_d = float('inf')
-                for track in tracker.assets:
-                    d = CDKFTracker._haversine(det["gps"], (track.state[0], track.state[1]))
-                    if d < min_d:
-                        min_d = d
-                        best_id = track.asset_id
+            # Sort inventory by severity priority: High > Medium > Low
+            SEVERITY_ORDER = {"High": 0, "Medium": 1, "Low": 2}
+            sorted_inventory = sorted(inventory, key=lambda x: SEVERITY_ORDER.get(x["severity_irc82"], 3))
 
-                c_name = det["class_name"].replace("D00_", "").replace("D10_", "").replace("D20_", "").replace("D40_", "")
+            # Build detection rows for the table from the sorted inventory (top 20)
+            detection_rows = []
+            for item in sorted_inventory[:20]:
+                c_name = item["class"].replace("D00_", "").replace("D10_", "").replace("D20_", "").replace("D40_", "")
                 detection_rows.append({
-                    "id": f"DF-{best_id:04d}" if isinstance(best_id, int) else f"DF-{best_id}",
+                    "id": f"DF-{item['id']:04d}",
                     "type": c_name,
-                    "distance": f"{det['distance']:.1f}",
-                    "area": f"{det['area']:.0f}",
-                    "severity": det["severity"],
+                    "distance": "-",
+                    "area": f"{item['area_cm2']:.0f}",
+                    "severity": item["severity_irc82"],
                 })
 
-            # Emit frame data
-            socketio.emit('frame_update', {
-                "frame": frame_b64,
-                "frame_idx": frame_idx,
-                "total_frames": total_frames,
-                "progress": round((frame_idx / max(total_frames, 1)) * 100, 1),
-                "latency_ms": round(latency_ms, 1),
-                "metrics": {
-                    "total_detections": total_detections,
-                    "critical_count": critical_count,
-                    "avg_depth": round(avg_depth, 1),
-                    "active_tracks": active_tracks,
-                },
-                "detections": detection_rows[-10:],  # last 10 for table
-            })
+            # Throttle emission to prevent overwhelming the client
+            now = time.time()
+            if now - last_emit_time >= EMIT_INTERVAL:
+                last_emit_time = now
+                socketio.emit('frame_update', {
+                    "frame": frame_b64,
+                    "frame_idx": frame_idx,
+                    "total_frames": total_frames,
+                    "progress": round((frame_idx / max(total_frames, 1)) * 100, 1),
+                    "latency_ms": round(latency_ms, 1),
+                    "metrics": {
+                        "total_detections": total_detections,
+                        "critical_count": critical_count,
+                        "avg_depth": round(avg_depth, 1),
+                        "active_tracks": active_tracks,
+                    },
+                    "detections": detection_rows,
+                })
 
             frame_idx += 1
             pipeline_state["frame_idx"] = frame_idx
-
-            # Small sleep to prevent overwhelming the client
-            time.sleep(0.01)
 
         cap.release()
         out.release()
@@ -347,6 +356,88 @@ def run_pipeline(video_path_or_cam_id):
 
 
 # ─── Main ───
+@app.route('/generate_report', methods=['POST'])
+def generate_report():
+    data = request.json or {}
+    api_key = data.get('api_key') or os.environ.get('GEMINI_API_KEY')
+    
+    if not api_key:
+        return jsonify({"error": "No API Key provided. Please provide a Gemini API Key."}), 400
+
+    geojson_path = os.path.join(RESULTS_DIR, "output_assets.geojson")
+    if not os.path.exists(geojson_path):
+        return jsonify({"error": "No data available yet. Please run the pipeline first."}), 404
+
+    try:
+        with open(geojson_path, 'r') as f:
+            geo_data = json.load(f)
+
+        client = genai.Client(api_key=api_key)
+        
+        prompt = f"""
+        You are an expert Civil Engineering Auditor. Analyze this GeoJSON export of road defects detected by our system.
+        Provide a concise, professional "End-of-Shift Maintenance Report".
+        Include:
+        1. Total defects found.
+        2. Breakdown by severity (High, Medium, Low).
+        3. A paragraph summarizing the overall condition and highlighting any 'High' severity emergency patches needed immediately.
+        4. Estimated patching materials required based on the area_cm2 and depth_mm metrics.
+        
+        GeoJSON Data:
+        {json.dumps(geo_data)[:30000]} # Trimmed to avoid exceeding context if huge
+        """
+        
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
+        return jsonify({"report": response.text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    data = request.json or {}
+    api_key = data.get('api_key') or os.environ.get('GEMINI_API_KEY')
+    message = data.get('message', '')
+    history = data.get('history', [])
+    
+    if not api_key:
+        return jsonify({"error": "No API Key provided."}), 400
+
+    geojson_path = os.path.join(RESULTS_DIR, "output_assets.geojson")
+    geo_data_str = "No data yet."
+    if os.path.exists(geojson_path):
+        with open(geojson_path, 'r') as f:
+            geo_data_str = json.dumps(json.load(f))[:20000]
+
+    try:
+        client = genai.Client(api_key=api_key)
+        
+        # Convert simple history to GenAI history format
+        contents = [
+            types.Content(role="user", parts=[
+                types.Part.from_text(text=f"System Context: You are a helpful Civil Engineering Assistant answering questions about this road survey data: {geo_data_str}")
+            ]),
+            types.Content(role="model", parts=[types.Part.from_text(text="Understood. How can I help you analyze the road survey data?")])
+        ]
+        
+        for msg in history:
+            role = "user" if msg['role'] == 'user' else "model"
+            contents.append(types.Content(role=role, parts=[types.Part.from_text(text=msg['content'])]))
+            
+        # Add current message
+        contents.append(types.Content(role="user", parts=[types.Part.from_text(text=message)]))
+        
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=contents,
+        )
+        return jsonify({"response": response.text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
     print("\n" + "=" * 60)
     print("  DPR-RIA — Live Road Defect Auditor")
