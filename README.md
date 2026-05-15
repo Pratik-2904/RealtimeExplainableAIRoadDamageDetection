@@ -304,8 +304,4 @@ assets_to_geojson(inventory, output_path="road_report.geojson")
 - GPU: NVIDIA (CUDA) recommended for training; Apple MPS supported
 - For edge deployment: NVIDIA Jetson Orin Nano + TensorRT 8.x
 
----
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
+---.
