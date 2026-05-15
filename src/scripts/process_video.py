@@ -18,7 +18,7 @@ Final output:
 import os
 import sys
 import argparse
-import cv2s
+import cv2
 import json
 import numpy as np
 

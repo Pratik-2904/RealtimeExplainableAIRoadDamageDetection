@@ -1,7 +1,7 @@
 # YOLO11-SPD-P2 object detection model with P2/4 - P3/8 - P4/16 - P5/32 outputs
 
 # Parameters
-nc: 80 # number of classes
+nc: 4  # RDD2022 classes: D00, D10, D20, D40
 scales: 
   n: [0.50, 0.25, 1024] 
   s: [0.50, 0.50, 1024] 

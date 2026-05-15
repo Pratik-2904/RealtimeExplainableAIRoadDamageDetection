@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from src.models.custom_model import build_yolo_spd_p2
+from src.models.custom_model import build_dual_path_model
 
 def export_model_to_tensorrt(weights_path, img_size=640, int8=False, data_yaml=None):
     """
@@ -12,7 +12,7 @@ def export_model_to_tensorrt(weights_path, img_size=640, int8=False, data_yaml=N
     we reduce post-processing latency for the safety branch.
     """
     print(f"Loading custom model from {weights_path}...")
-    model = build_yolo_spd_p2(weights=weights_path)
+    model = build_dual_path_model(weights=weights_path)
     
     export_kwargs = {
         'format': 'engine',

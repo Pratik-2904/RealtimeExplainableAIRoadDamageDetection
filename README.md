@@ -5,7 +5,7 @@
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-orange)](https://pytorch.org)
 [![Ultralytics](https://img.shields.io/badge/Ultralytics-8.4%2B-blue)](https://ultralytics.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 
 ---
 
@@ -62,6 +62,44 @@ Camera Frame
 
 ---
 
+## 📖 Documentation
+- [ARCHITECTURE.md](ARCHITECTURE.md): Deep dive into the Dual-Path YOLO, CDKF tracker, and MBTP depth estimation.
+- [OUTPUT_USAGE.md](OUTPUT_USAGE.md): How municipal bodies and engineers can use the GeoJSON and Video outputs.
+- [BENCHMARKS.md](BENCHMARKS.md): Project performance metrics (latency, distance, accuracy).
+
+---
+
+## 🚀 How to Run
+
+There are two primary ways to run this project:
+
+### Method 1: Use Pre-trained Model from Kaggle (Quick Start)
+If you don't want to train the model from scratch, you can use the pre-trained weights from the provided Kaggle/Colab notebook.
+1. Open `DPR_RIA_GPU_Training.ipynb` in Kaggle or Google Colab and run it to train/export the model.
+2. Download the resulting `best.pt` weights file.
+3. Place `best.pt` directly into the root `RoadDamageDetector/` directory.
+4. Start the live UI dashboard:
+   ```bash
+   pip install -r requirements.txt
+   python src/ui/app.py
+   ```
+5. Open `http://localhost:5001` to use the Live Auditor.
+
+### Method 2: End-to-End Local Training and Usage
+If you want to train locally on your own GPU:
+1. Ensure your dataset is structured according to `src/data/rdd2022.yaml`.
+2. Run the training script:
+   ```bash
+   python src/scripts/train.py
+   ```
+3. Once training completes, the `best.pt` will automatically be saved.
+4. Launch the dashboard to use the newly trained model:
+   ```bash
+   python src/ui/app.py
+   ```
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -77,16 +115,19 @@ RoadDamageDetector/
 │   │   ├── depth_estimation.py    ← DepthAnything V2 wrapper
 │   │   └── explainability.py      ← LayerCAM / Grad-CAM heatmaps
 │   ├── utils/
-│   │   ├── analytics.py           ← MBTP area + IRC:82-2015 severity + GPS
+│   │   ├── analytics.py           ← MBTP area + GPS backprojection
 │   │   ├── tscm.py                ← CDKF Kalman tracker (deduplication)
 │   │   └── geojson_exporter.py    ← GeoJSON FeatureCollection output
 │   ├── data/
 │   │   ├── rdd2022.yaml           ← Dataset config (point to your data)
 │   │   ├── convert_rdd2022.py     ← VOC XML → YOLO TXT converter
 │   │   └── sahi_inference.py      ← High-res SAHI sliced inference
-│   └── scripts/
-│       ├── train.py               ← Main training script
-│       └── export_tensorrt.py     ← TensorRT INT8 export for Jetson
+│   ├── scripts/
+│   │   ├── train.py               ← Main training script
+│   │   ├── process_video.py       ← End-to-end video pipeline (CLI)
+│   │   └── export_tensorrt.py     ← TensorRT INT8 export for Jetson
+│   └── ui/
+│       └── app.py                 ← Streamlit live dashboard
 ```
 
 ---
@@ -304,4 +345,4 @@ assets_to_geojson(inventory, output_path="road_report.geojson")
 - GPU: NVIDIA (CUDA) recommended for training; Apple MPS supported
 - For edge deployment: NVIDIA Jetson Orin Nano + TensorRT 8.x
 
----.
+---

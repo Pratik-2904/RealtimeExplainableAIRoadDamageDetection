@@ -100,11 +100,11 @@ def run_training(fast: bool = False, resume: bool = False):
 
     if resume:
         last_ckpt = os.path.join(
-            "runs", "detect", RUNS_DIR, "dual_path_rdd2022", "weights", "last.pt"
+            RUNS_DIR, "dual_path_rdd2022", "weights", "last.pt"
         )
         # Also check the actual output dir
         alt_ckpt = os.path.join(
-            "runs", "detect", RUNS_DIR, run_name, "weights", "last.pt"
+            RUNS_DIR, run_name, "weights", "last.pt"
         )
         ckpt = last_ckpt if os.path.exists(last_ckpt) else alt_ckpt
         if os.path.exists(ckpt):
@@ -117,7 +117,7 @@ def run_training(fast: bool = False, resume: bool = False):
     results = model.train(**train_kwargs)
 
     print("\n[Train] ✓ Training complete!")
-    best = os.path.join("runs", "detect", RUNS_DIR, run_name, "weights", "best.pt")
+    best = os.path.join(RUNS_DIR, run_name, "weights", "best.pt")
     print(f"[Train]   Best weights: {best}")
     print(f"[Train]   mAP50: {results.results_dict.get('metrics/mAP50(B)', 'N/A')}")
     return results

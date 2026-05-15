@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DPR-RIA — Live Road Defect Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-bright":"#363940","error":"#ffb4ab","inverse-primary":"#00696f",
+        "secondary-container":"#ff506e","on-background":"#e1e2eb","on-surface":"#e1e2eb",
+        "surface-container-lowest":"#0b0e14","surface-container-highest":"#32353c",
+        "surface-variant":"#32353c","on-primary":"#00363a","surface-container-high":"#272a31",
+        "tertiary-container":"#ffd3a5","background":"#10131a","on-secondary":"#67001d",
+        "primary-fixed":"#74f5ff","surface-container-low":"#191c22",
+        "surface-container":"#1d2026","outline-variant":"#3a494b","on-error":"#690005",
+        "on-secondary-container":"#5b0018","secondary":"#ffb2b8","tertiary":"#fff6ef",
+        "surface-tint":"#00dbe7","surface":"#10131a","surface-dim":"#10131a",
+        "primary":"#e1fdff","on-primary-container":"#006a71","outline":"#849495",
+        "on-surface-variant":"#b9cacb","primary-container":"#00f2ff",
+        "tertiary-fixed-dim":"#ffb866","primary-fixed-dim":"#00dbe7",
+        "secondary-fixed-dim":"#ffb2b8"
+      },
+      spacing: {"stack-lg":"32px","stack-md":"16px","sidebar-width":"280px","margin-desktop":"32px","gutter":"24px","stack-sm":"8px","margin-mobile":"16px"},
+      fontFamily: {"display-lg":["Inter"],"label-mono":["JetBrains Mono"],"metric-xl":["JetBrains Mono"],"headline-md":["Inter"],"body-md":["Inter"],"headline-lg":["Inter"],"body-lg":["Inter"]},
+      fontSize: {
+        "display-lg":["48px",{lineHeight:"56px",letterSpacing:"-0.02em",fontWeight:"700"}],
+        "label-mono":["14px",{lineHeight:"20px",letterSpacing:"0.05em",fontWeight:"500"}],
+        "metric-xl":["40px",{lineHeight:"40px",fontWeight:"700"}],
+        "headline-md":["24px",{lineHeight:"32px",fontWeight:"600"}],
+        "body-md":["16px",{lineHeight:"24px",fontWeight:"400"}],
+        "headline-lg":["32px",{lineHeight:"40px",fontWeight:"600"}],
+      }
+    }
+  }
+};
+</script>
+<style>
+.bg-dot-grid{background-image:radial-gradient(rgba(255,255,255,0.1) 1px,transparent 1px);background-size:20px 20px}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:#10131a}::-webkit-scrollbar-thumb{background:#32353c;border-radius:4px}::-webkit-scrollbar-thumb:hover{background:#3a494b}
+.glass-tier-1{background:rgba(11,14,20,0.4);backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,0.15)}
+.glass-tier-2{background:rgba(11,14,20,0.6);backdrop-filter:blur(20px);border:0.5px solid rgba(0,242,255,0.3);box-shadow:inset 0 0 10px rgba(0,242,255,0.1)}
+.glow-critical{box-shadow:0 0 20px 5px rgba(255,0,85,0.2)}
+.glow-primary{box-shadow:0 0 15px 2px rgba(0,242,255,0.15)}
+.corner-brackets{position:relative}
+.corner-brackets::before,.corner-brackets::after,.corner-brackets-inner::before,.corner-brackets-inner::after{content:'';position:absolute;width:20px;height:20px;border-color:#00dbe7;border-style:solid}
+.corner-brackets::before{top:0;left:0;border-width:2px 0 0 2px}.corner-brackets::after{top:0;right:0;border-width:2px 2px 0 0}
+.corner-brackets-inner::before{bottom:0;left:0;border-width:0 0 2px 2px}.corner-brackets-inner::after{bottom:0;right:0;border-width:0 2px 2px 0}
+.scan-line{position:absolute;width:100%;height:2px;background:rgba(0,242,255,0.5);box-shadow:0 0 10px rgba(0,242,255,0.8);animation:scanMove 3s ease-in-out infinite}
+@keyframes scanMove{0%{top:10%}50%{top:90%}100%{top:10%}}
+.upload-zone{border:2px dashed rgba(0,242,255,0.4);transition:all 0.3s}.upload-zone.dragover{border-color:#00f2ff;background:rgba(0,242,255,0.05);box-shadow:0 0 20px rgba(0,242,255,0.15)}
+.severity-high{background:rgba(255,80,110,0.2);color:#ff506e;border:1px solid rgba(255,80,110,0.5)}
+.severity-medium{background:rgba(255,184,102,0.2);color:#ffb866;border:1px solid rgba(255,184,102,0.5)}
+.severity-low{background:rgba(116,245,255,0.2);color:#74f5ff;border:1px solid rgba(116,245,255,0.5)}
+</style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface bg-dot-grid min-h-screen font-body-md text-body-md overflow-x-hidden">
+
+<!-- TopAppBar -->
+<header class="bg-surface/40 fixed top-0 ml-sidebar-width h-16 backdrop-blur-md border-b border-white/15 flex justify-between items-center px-margin-desktop w-[calc(100%-280px)] z-50">
+  <div class="flex items-center">
+    <h1 class="font-headline-md text-headline-md font-bold text-primary-fixed drop-shadow-[0_0_8px_rgba(0,242,255,0.4)]">Live Road Defect Auditor</h1>
+  </div>
+  <div class="flex items-center gap-stack-md">
+    <div class="flex items-center gap-stack-sm">
+      <span id="status-indicator" class="hidden px-3 py-1 rounded border font-label-mono text-[11px] tracking-wider"></span>
+      <button class="w-10 h-10 flex items-center justify-center glass-tier-1 text-on-surface-variant hover:text-primary-fixed transition-colors rounded relative">
+        <span id="notif-dot" class="hidden absolute top-2 right-2 w-2 h-2 bg-secondary-container rounded-full glow-critical"></span>
+        <span class="material-symbols-outlined">notifications_active</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- SideNavBar -->
+<nav class="bg-surface-container-highest/80 text-primary-container w-sidebar-width h-screen fixed left-0 top-0 backdrop-blur-xl border-r border-white/15 flex flex-col py-stack-md px-stack-sm z-40">
+  <div class="mb-stack-lg px-stack-sm flex items-center gap-stack-sm mt-2">
+    <div class="w-10 h-10 rounded glass-tier-2 flex items-center justify-center glow-primary">
+      <span class="material-symbols-outlined text-primary-fixed">radar</span>
+    </div>
+    <div>
+      <h2 class="font-display-lg text-headline-md tracking-tighter text-primary-container">DPR-RIA</h2>
+      <p class="font-label-mono text-[10px] text-on-surface-variant tracking-widest uppercase">MODULES ACTIVE</p>
+    </div>
+  </div>
+  <div class="flex-1 flex flex-col gap-2">
+    <a class="flex items-center gap-3 px-4 py-3 rounded-r-lg text-primary-container font-bold border-l-2 border-primary-container bg-primary-container/10" href="#">
+      <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">memory</span>
+      <span class="font-label-mono text-label-mono">YOLO Engine</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 rounded-r-lg text-on-surface-variant border-l-2 border-transparent hover:bg-white/5 transition-all" href="#">
+      <span class="material-symbols-outlined">layers</span>
+      <span class="font-label-mono text-label-mono">BMS-SPPF</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 rounded-r-lg text-on-surface-variant border-l-2 border-transparent hover:bg-white/5 transition-all" href="#">
+      <span class="material-symbols-outlined">filter_alt</span>
+      <span class="font-label-mono text-label-mono">CDKF Filter</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 rounded-r-lg text-on-surface-variant border-l-2 border-transparent hover:bg-white/5 transition-all" href="#">
+      <span class="material-symbols-outlined">analytics</span>
+      <span class="font-label-mono text-label-mono">IRC Analyzer</span>
+    </a>
+  </div>
+  <!-- Upload Zone -->
+  <div class="mt-auto mb-stack-md px-stack-sm flex flex-col gap-2">
+    <div id="upload-zone" class="upload-zone w-full py-6 rounded glass-tier-1 text-primary-fixed font-label-mono text-label-mono flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-primary-container/5 transition-all">
+      <span class="material-symbols-outlined text-3xl">cloud_upload</span>
+      <span>Upload Dashcam Video</span>
+      <span class="text-[10px] text-on-surface-variant">.mp4 files supported</span>
+      <input type="file" id="file-input" accept=".mp4" class="hidden"/>
+    </div>
+    <button id="btn-live-cam" class="w-full py-3 rounded glass-tier-1 text-on-surface-variant font-label-mono text-sm flex items-center justify-center gap-2 hover:bg-white/5 hover:text-primary-fixed transition-all border border-transparent hover:border-primary-fixed/30">
+      <span class="material-symbols-outlined text-lg">videocam</span>
+      Use Live Camera
+    </button>
+    <p id="upload-status" class="text-[11px] font-label-mono text-on-surface-variant text-center hidden"></p>
+  </div>
+  <!-- Footer -->
+  <div class="border-t border-white/10 pt-stack-md flex flex-col gap-2">
+    <a class="flex items-center gap-3 px-4 py-2 rounded text-on-surface-variant hover:bg-white/5 transition-all" href="#">
+      <span class="material-symbols-outlined text-sm">settings</span>
+      <span class="font-label-mono text-label-mono text-xs">System Diagnostics</span>
+    </a>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<main class="ml-sidebar-width pt-24 px-margin-desktop pb-margin-desktop min-h-screen">
+  <!-- Top Action Bar -->
+  <div class="flex justify-between items-end mb-gutter">
+    <div>
+      <h2 class="font-headline-lg text-headline-lg text-on-surface">System Overview</h2>
+      <p id="latency-text" class="font-label-mono text-label-mono text-on-surface-variant mt-1">AWAITING INPUT // IDLE</p>
+    </div>
+    <div class="flex gap-stack-md">
+      <a id="btn-download" href="/download/output_assets.geojson" class="hidden glass-tier-1 border border-outline-variant text-on-surface px-6 py-2 rounded font-label-mono text-label-mono hover:bg-surface-container-high transition-colors flex items-center gap-2 no-underline">
+        <span class="material-symbols-outlined text-sm">download</span>Download Report
+      </a>
+      <button id="btn-run" class="bg-primary-container/10 border border-primary-container text-primary-fixed px-6 py-2 rounded font-label-mono text-label-mono hover:bg-primary-container/20 transition-all glow-primary flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm">play_arrow</span>Run Pipeline
+      </button>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="grid grid-cols-12 gap-gutter mb-gutter">
+    <!-- Video Feed -->
+    <div class="col-span-12 lg:col-span-8">
+      <div class="glass-tier-1 rounded-lg p-1 h-full flex flex-col relative" style="min-height:480px">
+        <div class="absolute top-4 left-4 z-10 flex items-center gap-2 bg-surface-container-highest/80 backdrop-blur px-3 py-1 rounded border border-white/10">
+          <span id="live-dot" class="w-2 h-2 rounded-full bg-outline"></span>
+          <span id="live-label" class="font-label-mono text-label-mono text-xs tracking-widest text-on-surface-variant">STANDBY</span>
+        </div>
+        <div class="absolute top-4 right-4 z-10 bg-surface-container-highest/80 backdrop-blur px-3 py-1 rounded border border-white/10">
+          <span id="frame-counter" class="font-label-mono text-[11px] text-on-surface-variant">FRAME 0 / 0</span>
+        </div>
+        <div class="corner-brackets flex-1 relative overflow-hidden bg-black/50 border border-primary-fixed/20 m-3 rounded-sm">
+          <div class="corner-brackets-inner w-full h-full flex items-center justify-center">
+            <img id="video-feed" class="w-full h-full object-contain hidden" alt="Live feed"/>
+            <div id="video-placeholder" class="flex flex-col items-center gap-4 text-on-surface-variant">
+              <span class="material-symbols-outlined text-6xl opacity-30">videocam_off</span>
+              <span class="font-label-mono text-label-mono">Upload a video and run the pipeline</span>
+            </div>
+            <div class="scan-line hidden" id="scan-line"></div>
+          </div>
+        </div>
+        <!-- Progress bar -->
+        <div class="mx-3 mb-3">
+          <div class="w-full bg-surface-container-highest rounded-full h-1">
+            <div id="progress-bar" class="bg-primary-container h-1 rounded-full transition-all duration-300" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metric Cards -->
+    <div class="col-span-12 lg:col-span-4 flex flex-col gap-stack-md">
+      <div class="glass-tier-1 rounded-lg p-5 border-t-2 border-t-primary-fixed relative overflow-hidden hover:glass-tier-2 transition-all">
+        <div class="absolute -right-4 -top-4 text-primary-fixed/5 font-display-lg text-8xl font-bold pointer-events-none">01</div>
+        <p class="font-label-mono text-label-mono text-on-surface-variant mb-2">DETECTIONS FOUND</p>
+        <div class="flex items-baseline gap-3">
+          <span id="metric-detections" class="font-metric-xl text-metric-xl text-primary-fixed">0</span>
+        </div>
+      </div>
+      <div class="glass-tier-1 rounded-lg p-5 border-t-2 border-t-secondary-container relative overflow-hidden hover:bg-surface-container-highest/60 transition-all" id="card-critical">
+        <div class="absolute -right-4 -top-4 text-secondary-container/5 font-display-lg text-8xl font-bold pointer-events-none">02</div>
+        <p class="font-label-mono text-label-mono text-on-surface-variant mb-2">CRITICAL DEFECTS</p>
+        <div class="flex items-baseline gap-3">
+          <span id="metric-critical" class="font-metric-xl text-metric-xl text-secondary-container">0</span>
+          <span class="font-label-mono text-xs text-secondary-container">High Priority</span>
+        </div>
+      </div>
+      <div class="glass-tier-1 rounded-lg p-5 border-t-2 border-t-tertiary-fixed-dim relative overflow-hidden hover:bg-surface-container-highest/60 transition-all">
+        <div class="absolute -right-4 -top-4 text-tertiary-fixed-dim/5 font-display-lg text-8xl font-bold pointer-events-none">03</div>
+        <p class="font-label-mono text-label-mono text-on-surface-variant mb-2">AVG DEPTH (MM)</p>
+        <div class="flex items-baseline gap-3">
+          <span id="metric-depth" class="font-metric-xl text-metric-xl text-tertiary-fixed-dim">0.0</span>
+        </div>
+      </div>
+      <div class="glass-tier-1 rounded-lg p-5 border-t-2 border-t-outline relative overflow-hidden hover:bg-surface-container-highest/60 transition-all flex-1 flex flex-col justify-center">
+        <p class="font-label-mono text-label-mono text-on-surface-variant mb-2">ACTIVE TRACKS</p>
+        <div class="flex items-baseline gap-3">
+          <span id="metric-tracks" class="font-metric-xl text-metric-xl text-on-surface">0</span>
+          <span id="sync-status" class="font-label-mono text-xs text-on-surface-variant flex items-center gap-1">Idle</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detections Table -->
+  <div class="glass-tier-1 rounded-lg border border-white/10 overflow-hidden">
+    <div class="px-6 py-4 border-b border-white/10 bg-surface-container-highest/30 flex justify-between items-center">
+      <h3 class="font-headline-md text-[18px] text-on-surface">Detections Stream</h3>
+      <span class="px-2 py-1 bg-surface-container rounded border border-outline-variant font-label-mono text-[10px] text-on-surface-variant">LIVE</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-white/10 bg-surface-container-lowest/50 font-label-mono text-xs text-on-surface-variant">
+            <th class="px-6 py-3 font-medium tracking-wider">DEFECT_ID</th>
+            <th class="px-6 py-3 font-medium tracking-wider">TYPE</th>
+            <th class="px-6 py-3 font-medium tracking-wider">DISTANCE (M)</th>
+            <th class="px-6 py-3 font-medium tracking-wider">EST. AREA (CM²)</th>
+            <th class="px-6 py-3 font-medium tracking-wider">SEVERITY</th>
+          </tr>
+        </thead>
+        <tbody id="detections-tbody" class="font-label-mono text-sm">
+          <tr><td colspan="5" class="px-6 py-8 text-center text-on-surface-variant">Awaiting pipeline data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+const socket = io();
+const videoFeed = document.getElementById('video-feed');
+const placeholder = document.getElementById('video-placeholder');
+const scanLine = document.getElementById('scan-line');
+const btnRun = document.getElementById('btn-run');
+const btnDownload = document.getElementById('btn-download');
+const uploadZone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('file-input');
+const uploadStatus = document.getElementById('upload-status');
+const btnLiveCam = document.getElementById('btn-live-cam');
+
+let videoUploaded = false;
+
+// Upload handling
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+  const fd = new FormData();
+  fd.append('video', file);
+  uploadStatus.classList.remove('hidden');
+  uploadStatus.textContent = 'Uploading...';
+  uploadStatus.className = 'text-[11px] font-label-mono text-primary-fixed mt-2 text-center';
+  fetch('/upload', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        uploadStatus.textContent = `✓ ${data.filename} (${data.frames} frames @ ${data.fps}fps)`;
+        uploadStatus.className = 'text-[11px] font-label-mono text-primary-fixed mt-2 text-center';
+        videoUploaded = true;
+      } else {
+        uploadStatus.textContent = `✗ ${data.error}`;
+        uploadStatus.className = 'text-[11px] font-label-mono text-secondary-container mt-2 text-center';
+      }
+    }).catch(() => { uploadStatus.textContent = '✗ Upload failed'; });
+}
+
+// Run pipeline
+btnRun.addEventListener('click', () => socket.emit('start_pipeline'));
+
+// Live Camera
+btnLiveCam.addEventListener('click', () => {
+    socket.emit('start_live_camera');
+    uploadStatus.classList.remove('hidden');
+    uploadStatus.textContent = 'Starting Webcam...';
+    uploadStatus.className = 'text-[11px] font-label-mono text-primary-fixed mt-2 text-center animate-pulse';
+});
+
+// Socket events
+socket.on('pipeline_status', (data) => {
+  const si = document.getElementById('status-indicator');
+  si.classList.remove('hidden');
+  if (data.status === 'loading_model') {
+    si.textContent = 'LOADING MODEL...';
+    si.className = 'px-3 py-1 rounded border font-label-mono text-[11px] tracking-wider border-tertiary-fixed-dim text-tertiary-fixed-dim animate-pulse';
+    document.getElementById('latency-text').textContent = 'LOADING MODEL // PLEASE WAIT';
+  } else if (data.status === 'running') {
+    si.textContent = 'PIPELINE ACTIVE';
+    si.className = 'px-3 py-1 rounded border font-label-mono text-[11px] tracking-wider border-primary-fixed text-primary-fixed';
+    document.getElementById('live-dot').className = 'w-2 h-2 rounded-full bg-secondary-container glow-critical animate-pulse';
+    document.getElementById('live-label').textContent = 'LIVE FEED';
+    document.getElementById('live-label').className = 'font-label-mono text-label-mono text-xs tracking-widest text-secondary-fixed-dim';
+    scanLine.classList.remove('hidden');
+    document.getElementById('notif-dot').classList.remove('hidden');
+    btnRun.innerHTML = '<span class="material-symbols-outlined text-sm">stop</span>Stop Pipeline';
+    btnRun.onclick = () => socket.emit('stop_pipeline');
+  } else if (data.status === 'complete') {
+    si.textContent = 'COMPLETE ✓';
+    si.className = 'px-3 py-1 rounded border font-label-mono text-[11px] tracking-wider border-primary-fixed text-primary-fixed';
+    document.getElementById('latency-text').textContent = `PIPELINE COMPLETE // ${data.total_assets} UNIQUE ASSETS EXPORTED`;
+    document.getElementById('live-dot').className = 'w-2 h-2 rounded-full bg-primary-fixed';
+    document.getElementById('live-label').textContent = 'COMPLETE';
+    scanLine.classList.add('hidden');
+    btnDownload.classList.remove('hidden');
+    btnRun.innerHTML = '<span class="material-symbols-outlined text-sm">play_arrow</span>Run Pipeline';
+    btnRun.onclick = () => socket.emit('start_pipeline');
+    document.getElementById('sync-status').innerHTML = '✓ Exported';
+  } else if (data.status === 'no_video') {
+    si.textContent = 'NO VIDEO';
+    si.className = 'px-3 py-1 rounded border font-label-mono text-[11px] tracking-wider border-secondary-container text-secondary-container';
+  } else if (data.status === 'error') {
+    si.textContent = 'ERROR';
+    si.className = 'px-3 py-1 rounded border font-label-mono text-[11px] tracking-wider border-secondary-container text-secondary-container';
+    document.getElementById('latency-text').textContent = `ERROR // ${data.message || 'Unknown'}`;
+  }
+});
+
+socket.on('frame_update', (data) => {
+  // Video frame
+  videoFeed.src = 'data:image/jpeg;base64,' + data.frame;
+  videoFeed.classList.remove('hidden');
+  placeholder.classList.add('hidden');
+
+  // Progress
+  document.getElementById('progress-bar').style.width = data.progress + '%';
+  document.getElementById('frame-counter').textContent = `FRAME ${data.frame_idx} / ${data.total_frames}`;
+  document.getElementById('latency-text').textContent = `REAL-TIME INFERENCE ACTIVE // LATENCY ${data.latency_ms}ms`;
+
+  // Metrics
+  const m = data.metrics;
+  document.getElementById('metric-detections').textContent = m.total_detections.toLocaleString();
+  document.getElementById('metric-critical').textContent = m.critical_count;
+  document.getElementById('metric-depth').textContent = m.avg_depth.toFixed(1);
+  document.getElementById('metric-tracks').textContent = String(m.active_tracks).padStart(2, '0');
+  document.getElementById('sync-status').innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-primary-fixed animate-pulse"></span> Syncing';
+
+  // Critical glow
+  const cc = document.getElementById('card-critical');
+  cc.className = m.critical_count > 0
+    ? 'glass-tier-1 rounded-lg p-5 border-t-2 border-t-secondary-container relative overflow-hidden hover:bg-surface-container-highest/60 transition-all glow-critical'
+    : 'glass-tier-1 rounded-lg p-5 border-t-2 border-t-secondary-container relative overflow-hidden hover:bg-surface-container-highest/60 transition-all';
+
+  // Detection table
+  if (data.detections && data.detections.length > 0) {
+    const tbody = document.getElementById('detections-tbody');
+    let html = '';
+    data.detections.forEach(d => {
+      const sevClass = d.severity === 'High' ? 'severity-high' : d.severity === 'Medium' ? 'severity-medium' : 'severity-low';
+      const sevLabel = d.severity === 'High' ? 'CRITICAL' : d.severity === 'Medium' ? 'MODERATE' : 'MINOR';
+      html += `<tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+        <td class="px-6 py-3 text-primary-fixed-dim">#${d.id}</td>
+        <td class="px-6 py-3 text-on-surface">${d.type}</td>
+        <td class="px-6 py-3 text-on-surface-variant">${d.distance}</td>
+        <td class="px-6 py-3 text-on-surface-variant">${d.area}</td>
+        <td class="px-6 py-3"><span class="px-2 py-1 rounded text-[10px] ${sevClass}">${sevLabel}</span></td>
+      </tr>`;
+    });
+    tbody.innerHTML = html;
+  }
+});
+</script>
+</body>
+</html>

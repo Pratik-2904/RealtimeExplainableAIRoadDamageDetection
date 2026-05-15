@@ -29,27 +29,6 @@ def estimate_mbtp_area(mask_points, depth_map, focal_length, pixel_area_constant
     return area
 
 
-def grade_severity(metric_depth_mm):
-    """
-    Assigns a severity grade based on IRC:82-2015 standards for potholes.
-    
-    Low:  < 25 mm     -> Routine Monitoring
-    Medium: 25 - 50 mm -> Patching / Sealing
-    High: > 50 mm     -> Emergency Repair
-    
-    Args:
-        metric_depth_mm: Maximum or average depth of the pothole in mm.
-        
-    Returns:
-        tuple: (Severity Grade string, Maintenance Action string)
-    """
-    if metric_depth_mm < 25:
-        return "Low", "Routine Monitoring"
-    elif 25 <= metric_depth_mm <= 50:
-        return "Medium", "Patching / Sealing"
-    else:
-        return "High", "Emergency Repair"
-
 
 def backproject_to_gps(u, v, z, K_inv, camera_height_m, vehicle_gps, heading_rad):
     """
@@ -101,7 +80,8 @@ if __name__ == "__main__":
     area = estimate_mbtp_area(fake_mask, fake_depth, focal_length=800.0, pixel_area_constant=1.0)
     print(f"Estimated Area: {area:.4f} cm^2")
     
-    grade, action = grade_severity(30.0)
+    from src.utils.tscm import irc_severity
+    grade, action = irc_severity(30.0)
     print(f"Severity: {grade} -> {action}")
     
     # Identity inverse intrinsic

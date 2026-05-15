@@ -26,8 +26,9 @@ build/
 runs/
 
 # Data / datasets (usually too large for git)
-data/
-datasets/
+# Anchored with / to avoid matching src/data/
+/data/
+/datasets/
 
 # Logs
 *.log

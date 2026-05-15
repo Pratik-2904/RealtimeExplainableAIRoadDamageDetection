@@ -15,7 +15,7 @@ Edge-to-Cloud hybrid:
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def assets_to_geojson(inventory: list[dict], output_path: str = "road_assets.geojson") -> str:
@@ -52,7 +52,7 @@ def assets_to_geojson(inventory: list[dict], output_path: str = "road_assets.geo
                 "depth_mm": round(asset.get("depth_mm", 0.0), 2),
                 "frames_tracked": asset.get("frames_tracked", 1),
                 "total_detections": asset.get("total_detections", 1),
-                "generated_at": datetime.utcnow().isoformat() + "Z",
+                "generated_at": datetime.now(timezone.utc).isoformat(),
             },
         }
         features.append(feature)
