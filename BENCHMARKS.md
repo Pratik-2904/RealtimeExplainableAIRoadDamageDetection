@@ -3,7 +3,6 @@
 The DPR-RIA system is rigorously benchmarked to ensure it meets the requirements for real-time edge processing and highly accurate road auditing.
 
 ## 1. Latency & Inference Speed
-Tested on standard edge-compute profiles (e.g., NVIDIA Jetson Orin Nano / RTX 4060 laptop).
 - **End-to-End Pipeline Latency**: ~12ms - 18ms per frame.
 - **Frames Per Second (FPS)**: Can comfortably process 30-45 FPS, allowing real-time inference on standard dashcam feeds without dropping frames.
 - **Tracking Overhead**: The CDKF tracker adds < 2ms latency per frame.
